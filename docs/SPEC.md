@@ -12,7 +12,7 @@ Image + target ratio in → extended image where the new region looks intentiona
 
 ## What it does NOT do (the boundary)
 
-The lane is welded. Retune *what a good extension looks like* via `/knowledge`; don't turn it into something else.
+The lane is welded. Retune _what a good extension looks like_ via `/knowledge`; don't turn it into something else.
 
 - Does: add believable surrounding content (sky, ground, background) to reach the ratio; repair the seam.
 - Does NOT: generate from scratch, edit content inside the original, remove objects (inpainting), restyle, or upscale.
@@ -30,6 +30,7 @@ Fine to start one-pass/two-pass simple. The verifier is what makes it agent-firs
 **`/knowledge` is plain, human-readable markdown. Read it and you know what this app considers a good extension. Edit it and the output changes.** Ships with solid photographic/compositional expertise out of the box. An architect could fork it, rewrite it for architectural renderings (material honesty, how light rakes a facade, human scale, entourage), and now it's a specialist tool — by hand or via their own agent. No code required.
 
 For an image tool the knowledge lives on the **generation** side (the seam-repair mechanism is domain-invariant and stays in code). Knowledge influences output in two places:
+
 1. It **guides the extension prompt** (what to generate into the new space).
 2. It **is the rubric the vision-check judges against**.
 

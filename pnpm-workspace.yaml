@@ -1,5 +1,16 @@
+allowBuilds:
+  '@google/genai': set this to true or false
+  protobufjs: set this to true or false
+  sharp: set this to true or false
+  unrs-resolver: set this to true or false
 # pnpm 11 reads build-script approvals from here (no longer from package.json).
-# esbuild + lightningcss ship native binaries that must be built on install.
+# These ship native binaries / postinstall codegen that must run on install:
+#   esbuild + lightningcss (Vite), sharp (libvips, the seam mechanism),
+#   @google/genai + protobufjs (image gen), unrs-resolver (eslint).
 onlyBuiltDependencies:
   - esbuild
   - lightningcss
+  - sharp
+  - '@google/genai'
+  - protobufjs
+  - unrs-resolver
