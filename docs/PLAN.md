@@ -1,9 +1,9 @@
 # outpaint-studio — build plan
 
-> The concrete, decided build plan. `SPEC.md` is the _what/why_ sketch and
-> `OVERVIEW.md` is the umbrella vision; **this is the _how_ and the build order**
-> a coding agent (or a human) can execute against. Where this plan and the code
-> disagree once the build starts, follow the code and amend this doc.
+The concrete, decided build plan. `SPEC.md` is the _what/why_ sketch and
+`OVERVIEW.md` is the umbrella vision; **this is the _how_ and the build order**
+a coding agent (or a human) can execute against. Where this plan and the code
+disagree once the build starts, follow the code and amend this doc.
 
 This plan was decided in a design session (mobile, agent-driven). It reflects
 real choices, not a survey of options — where a decision was made, the
@@ -35,7 +35,7 @@ The framework was never in question — it's the proven sibling stack
 | Concern       | Choice                                                   |
 | ------------- | -------------------------------------------------------- |
 | Framework     | TanStack Start (React 19 + Vite + Nitro SSR)             |
-| Styling       | Tailwind v4 (CSS-config) + `@tailwindcss/typography`     |
+| Styling       | Tailwind v4 (CSS-config); house `.prose` for reading     |
 | Language      | TypeScript, strict                                       |
 | Test          | Vitest                                                   |
 | Deploy        | Vercel                                                   |
@@ -248,11 +248,22 @@ turning "an app you visit" into "a capability your agents can call."
 - **Phase 0 — scaffold + shell + rails.** _Done._ Runnable app, deps, empty
   home, the docs viewer, feature seams + contracts, the knowledge starters, this
   plan.
-- **Setup step (do first, separate session) — port Sandbox global styles.** Pull
-  the canonical styles from the `joshcoolman/sandbox` repo (font stack, light/
-  dark theme, base element styling) into `src/styles.css` + the root layout. The
-  current styling is a neutral dark baseline placeholder. _(Needs a session with
-  `sandbox` in repo scope.)_
+- **Setup step — port Sandbox global styles.** _Done, and captured as a portable
+  baseline in `src/styles/` (see [`STYLE.md`](STYLE.md))._ The canonical "Paper &
+  Ink" styles from `joshcoolman/sandbox` are split into `tokens.css` (the design
+  contract — colors/fonts/scales, light + dark), `base.css`, `typography.css`
+  (house roles + the full `.prose` reading style + `.compact`), and `index.css`
+  (Tailwind import + the `@theme inline` bridge exposing tokens as theme-aware
+  utilities). One source of truth: reskin via `tokens.css`.
+  `@tailwindcss/typography` was dropped — `.prose` is the single reading source
+  of truth, so `/docs` matches sandbox's rhythm exactly. Fonts are **IBM Plex
+  Sans** (headers/UI) + **Martel** (reading body) + Space Mono (code), loaded via
+  `<link>` in `__root.tsx` with a pre-paint theme script (saved pref, else OS
+  `prefers-color-scheme`). The `/docs` layout was restyled to a sandbox-like
+  shell (surface sidebar rail + centered reading column). Feature styles never go
+  in `src/styles/` (STYLE.md). Skipped on purpose: sandbox's view-transition /
+  curtain animations (app features). No theme-toggle UI yet — a feature for
+  later; theme follows the OS.
 - **Phase 1 — the first vertical (one-pass).** Upload an image → pick a ratio /
   drag extent → build canvas + call Google extend → composite-back (`sharp`) →
   show before/after. No verifier yet. This proves the mechanism and output

@@ -7,7 +7,7 @@
     "#/*": "./src/*"
   },
   "scripts": {
-    "dev": "vite dev --port 3001",
+    "dev": "vite dev --port 3000",
     "generate-routes": "tsr generate",
     "build": "vite build",
     "preview": "vite preview",
@@ -35,7 +35,6 @@
     "tailwindcss": "^4.3.1"
   },
   "devDependencies": {
-    "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-vite": "^0.8.0",
     "@tanstack/eslint-config": "^0.4.0",
     "@tanstack/router-cli": "^1.167.17",

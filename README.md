@@ -31,7 +31,7 @@ Image/AI libraries in place (unused until the build): `@google/genai` (Gemini 2.
 
 ```bash
 pnpm install
-pnpm dev      # http://localhost:3001  (home shell + /docs viewer)
+pnpm dev      # http://localhost:3000  (home shell + /docs viewer)
 pnpm build    # production build
 pnpm test     # vitest
 pnpm lint

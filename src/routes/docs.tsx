@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -35,38 +35,40 @@ function slugify(path: string): string {
     .toLowerCase()
 }
 
-function classify(path: string): {
-  section: string
-  title: string
-  order: number
-} {
-  const base = path.split('/').pop()!.replace(/\.md$/i, '')
-  if (path === '/README.md')
-    return { section: 'Start here', title: 'README', order: 0 }
-  if (path === '/docs/PLAN.md')
-    return { section: 'Start here', title: 'Plan', order: 1 }
-  if (path === '/docs/SPEC.md')
-    return { section: 'Start here', title: 'Spec', order: 2 }
-  if (path === '/docs/OVERVIEW.md')
-    return { section: 'Start here', title: 'Overview', order: 3 }
-  if (path.startsWith('/knowledge/'))
-    return {
-      section: 'Knowledge',
-      title: titleCase(base.replace(/-/g, ' ')),
-      order: 0,
-    }
-  if (path === '/CLAUDE.md')
-    return { section: 'Working notes', title: 'CLAUDE.md', order: 0 }
-  return { section: 'Working notes', title: base, order: 1 }
+// Ordering convention: an optional `NN-` filename prefix sets a doc's order and
+// is stripped from the title and id (so `01-overview.md` shows as "Overview" and
+// keeps a stable URL hash). No prefix → sorts after numbered docs,
+// alphabetically. Reorder by renaming a file; never touch this code. A numeric
+// *prefix* (not suffix) is preferred — it also self-sorts the folder on GitHub.
+function parseOrder(base: string): { order: number; name: string } {
+  const m = base.match(/^(\d+)[-_.]\s*(.+)$/)
+  return m
+    ? { order: parseInt(m[1]!, 10), name: m[2]! }
+    : { order: Number.POSITIVE_INFINITY, name: base }
+}
+
+// Section comes from where a file lives, not a hardcoded per-file list — so a
+// new doc lands somewhere sensible on its own.
+function sectionFor(path: string): string {
+  if (path.startsWith('/knowledge/')) return 'Knowledge'
+  if (path === '/CLAUDE.md') return 'Working notes'
+  if (path === '/README.md' || path.startsWith('/docs/')) return 'Start here'
+  return 'Working notes'
+}
+
+function classify(path: string): Omit<Doc, 'content'> {
+  const segs = path.split('/')
+  const base = segs.pop()!.replace(/\.md$/i, '')
+  const { order, name } = parseOrder(base)
+  const title = /^(README|CLAUDE)$/i.test(name)
+    ? name
+    : titleCase(name.replace(/-/g, ' '))
+  return { id: slugify([...segs, name].join('/')), section: sectionFor(path), title, order }
 }
 
 function buildDocs(): Doc[] {
   return Object.entries(RAW)
-    .map(([path, content]) => ({
-      id: slugify(path),
-      content,
-      ...classify(path),
-    }))
+    .map(([path, content]) => ({ content, ...classify(path) }))
     .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title))
 }
 
@@ -86,8 +88,7 @@ function DocsPage() {
     }))
   }, [docs])
 
-  const defaultId =
-    docs.find((d) => d.id === 'docs-plan')?.id ?? docs[0]?.id ?? ''
+  const defaultId = sections[0]?.docs[0]?.id ?? docs[0]?.id ?? ''
   const [activeId, setActiveId] = useState(defaultId)
   const [navOpen, setNavOpen] = useState(false)
 
@@ -107,17 +108,17 @@ function DocsPage() {
 
   if (!active) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
+      <main className="bg-bg text-text-muted flex min-h-screen items-center justify-center">
         No documents found.
       </main>
     )
   }
 
   const nav = (
-    <nav className="flex flex-col gap-5">
+    <nav className="flex flex-col gap-7">
       {sections.map(({ section, docs: items }) => (
-        <div key={section} className="flex flex-col gap-1">
-          <p className="px-2 text-[11px] font-semibold tracking-wide text-zinc-500 uppercase">
+        <div key={section} className="flex flex-col gap-0.5">
+          <p className="text-text-faint mb-2 px-3 font-mono text-[11px] font-semibold tracking-[0.12em] uppercase">
             {section}
           </p>
           {items.map((d) => (
@@ -125,10 +126,10 @@ function DocsPage() {
               key={d.id}
               type="button"
               onClick={() => select(d.id)}
-              className={`rounded-md px-2 py-1 text-left text-sm transition ${
+              className={`block w-full rounded-md px-3 py-1.5 text-left text-[13px] transition ${
                 d.id === active.id
-                  ? 'bg-zinc-800 text-zinc-100'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-surface-raised text-text font-medium'
+                  : 'text-text-muted hover:text-text hover:bg-surface-sunken'
               }`}
             >
               {d.title}
@@ -140,32 +141,38 @@ function DocsPage() {
   )
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl gap-10 bg-zinc-950 px-4 py-10 text-zinc-100">
-      <aside className="hidden w-56 shrink-0 sm:block">
-        <div className="sticky top-10">{nav}</div>
+    <main className="bg-bg text-text flex min-h-screen">
+      <aside className="border-border bg-surface sticky top-0 hidden h-screen w-[272px] shrink-0 overflow-y-auto px-5 pt-9 pb-12 border-r sm:block">
+        <Link
+          to="/"
+          className="text-text-muted hover:text-accent mb-9 block px-3 font-mono text-xs tracking-tight transition-colors"
+        >
+          outpaint-studio
+        </Link>
+        {nav}
       </aside>
 
-      <article className="min-w-0 max-w-3xl flex-1">
-        <div className="mb-6 flex items-center gap-3 sm:hidden">
-          <button
-            type="button"
-            aria-label="Open docs menu"
-            onClick={() => setNavOpen(true)}
-            className="rounded-md border border-zinc-800 p-2 text-zinc-300"
-          >
-            <Menu size={16} />
-          </button>
-          <span className="text-sm font-medium text-zinc-200">
-            {active.title}
-          </span>
-        </div>
+      <div className="min-w-0 flex-1">
+        <article className="mx-auto max-w-[760px] px-6 pt-12 pb-28 sm:px-10 sm:pt-20">
+          <div className="mb-10 flex items-center gap-3 sm:hidden">
+            <button
+              type="button"
+              aria-label="Open docs menu"
+              onClick={() => setNavOpen(true)}
+              className="border-border text-text-body rounded-md border p-2"
+            >
+              <Menu size={16} />
+            </button>
+            <span className="text-text text-sm font-medium">{active.title}</span>
+          </div>
 
-        <div className="prose prose-invert max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {active.content}
-          </ReactMarkdown>
-        </div>
-      </article>
+          <div className="prose compact">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {active.content}
+            </ReactMarkdown>
+          </div>
+        </article>
+      </div>
 
       {navOpen && (
         <div
@@ -173,16 +180,16 @@ function DocsPage() {
           onClick={() => setNavOpen(false)}
         >
           <div
-            className="h-full w-72 max-w-[80%] overflow-y-auto border-r border-zinc-800 bg-zinc-950 p-5"
+            className="border-border bg-surface h-full w-72 max-w-[80%] overflow-y-auto border-r p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-5 flex items-center justify-between">
-              <span className="text-sm font-semibold text-zinc-200">Docs</span>
+              <span className="text-text text-sm font-semibold">Docs</span>
               <button
                 type="button"
                 aria-label="Close docs menu"
                 onClick={() => setNavOpen(false)}
-                className="rounded-md border border-zinc-800 p-2 text-zinc-300"
+                className="border-border text-text-body rounded-md border p-2"
               >
                 <X size={16} />
               </button>
